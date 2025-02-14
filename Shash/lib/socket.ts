@@ -2,7 +2,7 @@ import { io, Socket } from "socket.io-client";
 import { ChatMessage } from "@/types/chat";
 
 // Use NEXT_PUBLIC_SOCKET_URL for WebSocket connections
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:1337";
+const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || "http://strapi-chat-app-production.up.railway.app";
 
 let socket: Socket | null = null;
 

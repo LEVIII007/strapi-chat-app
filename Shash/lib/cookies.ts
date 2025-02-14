@@ -7,18 +7,21 @@ export const cookieConfig = {
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'strict' as const,
   path: '/',
-  maxAge: 7 * 24 * 60 * 60, // 7 days
+  maxAge: 7 * 24 * 60 * 60, // 7 days (in seconds)
 };
 
-export function setAuthToken(token: string): void {
-  cookies().set(COOKIE_NAME, token, cookieConfig);
+export async function setAuthToken(token: string): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.set(COOKIE_NAME, token, cookieConfig);
 }
 
-export function getAuthToken(): string | null {
-  const cookie = cookies().get(COOKIE_NAME);
+export async function getAuthToken(): Promise<string | null> {
+  const cookieStore = await cookies();
+  const cookie = cookieStore.get(COOKIE_NAME);
   return cookie?.value || null;
 }
 
-export function clearAuthToken(): void {
-  cookies().delete(COOKIE_NAME);
-} 
+export async function clearAuthToken(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete(COOKIE_NAME);
+}

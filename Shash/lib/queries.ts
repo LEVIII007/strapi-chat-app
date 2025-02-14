@@ -1,6 +1,13 @@
 'use server';
 
 import { auth } from "../auth";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const SERVER_URL = process.env.API_URL || "http://strapi-chat-app-production.up.railway.app";
+
+console.log("SERVER_URL", SERVER_URL);
 
 export async function getChatSessions() {
     const session = await auth();
@@ -11,7 +18,7 @@ export async function getChatSessions() {
 
     try {
         const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/chat-sessions?filters[users_permissions_user][id][$eq]=${session.user.id}`,
+            `${SERVER_URL}/api/chat-sessions?filters[users_permissions_user][id][$eq]=${session.user.id}`,
             {
                 method: "GET",
                 headers: {
@@ -60,7 +67,7 @@ export async function getChatSessions() {
 
 
 
-async function getChatSessionById(id : string) {
+export async function getChatSessionById(id: string) {
     const session = await auth();
 
     if (!session || !session.user?.id) {
@@ -69,7 +76,7 @@ async function getChatSessionById(id : string) {
 
     try {
         const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/chat-sessions/${id}`,
+            `${SERVER_URL}/api/chat-sessions/${id}`,
             {
                 method: "GET",
                 headers: {
@@ -102,7 +109,7 @@ export async function createChatSession(data: { title: string; description: stri
 
     try {
         const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/chat-sessions`,
+            `${SERVER_URL}/api/chat-sessions`,
             {
                 method: "POST",
                 headers: {
@@ -133,37 +140,6 @@ export async function createChatSession(data: { title: string; description: stri
 }
 
 
-// export async function getChatMessages(chatSessionId: number) {
-//     const session = await auth();
-
-//     if (!session || !session.user?.id) {
-//         return { success: false, message: "Unauthorized" };
-//     }
-
-//     try {
-//         const response = await fetch(
-//             `${process.env.NEXT_PUBLIC_API_URL}/api/messages?filters[chat_session][id][$eq]=${chatSessionId}&populate=*`,
-//             {
-//                 headers: {
-//                     Authorization: `Bearer ${session.jwt}`,
-//                     "Content-Type": "application/json",
-//                 },
-//             }
-//         );
-
-//         if (!response.ok) {
-//             throw new Error(`Failed to fetch messages: ${response.statusText}`);
-//         }
-
-//         const data = await response.json();
-//         return { success: true, data: data.data };
-//     } catch (error) {
-//         console.error("Error fetching messages:", error);
-//         return { success: false, message: "Error fetching messages" };
-//     }
-// }
-
-
 export async function deleteChatSession(chatSessionId: number) {
     const session = await auth();
 
@@ -173,7 +149,7 @@ export async function deleteChatSession(chatSessionId: number) {
 
     try {
         const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/chat-sessions/${chatSessionId}`,
+            `${SERVER_URL}/api/chat-sessions/${chatSessionId}`,
             {
                 method: "DELETE",
                 headers: {
@@ -205,7 +181,7 @@ export async function saveMessage(chatSessionId: number, content: string, sender
     try {
         // Verify that the chat session exists and belongs to the user
         const chatResponse = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/chat-sessions/${chatSessionId}`,
+            `${SERVER_URL}/api/chat-sessions/${chatSessionId}`,
             {
                 headers: {
                     Authorization: `Bearer ${session.jwt}`,
@@ -220,7 +196,7 @@ export async function saveMessage(chatSessionId: number, content: string, sender
 
         // Save the message in the database
         const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/messages`,
+            `${SERVER_URL}/api/messages`,
             {
                 method: "POST",
                 headers: {
@@ -262,7 +238,7 @@ export async function getChatMessages(chatSessionId: number) {
 
     try {
         const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/messages?filters[chat_session][id][$eq]=${chatSessionId}&sort=timestamp:asc`,
+            `${SERVER_URL}/api/messages?filters[chat_session][id][$eq]=${chatSessionId}&sort=timestamp:asc`,
             {
                 headers: {
                     Authorization: `Bearer ${session.jwt}`,
@@ -293,7 +269,7 @@ export async function deleteMessage(messageId: number) {
 
     try {
         const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/messages/${messageId}`,
+            `${SERVER_URL}/api/messages/${messageId}`,
             {
                 method: "DELETE",
                 headers: {
@@ -310,6 +286,37 @@ export async function deleteMessage(messageId: number) {
         return { success: true, message: "Message deleted successfully" };
     } catch (error) {
         console.error("Error deleting message:", error);
+        return { success: false, message: "Internal Server Error" };
+    }
+}
+
+
+export async function RenameChat(chatId: number, newTitle: string){
+    const session = await auth();
+    if(!session || !session.user?.id){
+        return { success: false, message: "Unauthorized" };
+    }
+    try{
+        const response = await fetch(
+            `${SERVER_URL}/api/chat-sessions/${chatId}`,
+            {
+                method: "PUT",
+                headers: {
+                    Authorization: `Bearer ${session.jwt}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    title: newTitle
+                })
+            }
+        );
+        if(!response.ok){
+            return { success: false, message: "Failed to rename chat"};
+        }
+        return { success: true, message: "Chat renamed successfully"};
+    }
+    catch(error){
+        console.error("Error renaming chat:", error);
         return { success: false, message: "Internal Server Error" };
     }
 }

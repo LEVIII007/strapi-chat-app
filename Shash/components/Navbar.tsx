@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Menu, User, LogOut } from 'lucide-react';
+import { User, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { useSession, signOut, signIn } from 'next-auth/react';
 import {

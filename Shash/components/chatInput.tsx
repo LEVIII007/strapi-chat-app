@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
-import { connectSocket, sendMessage, listenForMessages } from "@/lib/socket";
+import { connectSocket, sendMessage } from "@/lib/socket";
 import { ChatMessage, ChatSession } from "@/types/chat";
 
 interface ChatInputProps {
