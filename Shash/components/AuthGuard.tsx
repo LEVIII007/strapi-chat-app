@@ -27,10 +27,10 @@ export default function AuthGuard({ children }: AuthGuardProps) {
         <DialogContent className="sm:max-w-[425px] bg-background text-foreground">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-center">
-              Welcome to Ayna AI Chatbot
+              Welcome to Ayna Chat
             </DialogTitle>
             <DialogDescription className="text-center">
-              Your Personal AI Assistant
+              Your Personal Chat with Server
             </DialogDescription>
           </DialogHeader>
 
@@ -47,12 +47,12 @@ export default function AuthGuard({ children }: AuthGuardProps) {
             </div>
 
             <div className="space-y-4 text-center">
-              <h3 className="font-semibold text-lg">Why Choose Ayna AI?</h3>
+              <h3 className="font-semibold text-lg">Features</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>✨ Advanced AI-powered conversations</li>
-                <li>🔒 Secure and private chats</li>
-                <li>🚀 Seamless integration with your workflow</li>
-                <li>💡 Smart suggestions and insights</li>
+                <li>💬 Simple and intuitive chat interface</li>
+                <li>📱 Access your chats from any device</li>
+                <li>🔄 Real-time message syncing</li>
+                <li>📝 Save and review chat history</li>
               </ul>
             </div>
 
