@@ -38,8 +38,8 @@ export default function AuthGuard({ children }: AuthGuardProps) {
             {/* Add your logo or illustration here */}
             <div className="relative w-32 h-32 mb-4">
               <Image
-                src="/logo.png" // Add your logo path
-                alt="Ayna AI Logo"
+                src="/bot.jpg" // Add your logo path
+                alt="Chat app Logo"
                 fill
                 className="object-contain"
                 priority
