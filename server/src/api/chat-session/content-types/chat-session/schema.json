@@ -23,11 +23,8 @@
       "target": "api::message.message",
       "mappedBy": "chat_session"
     },
-    "users_permissions_user": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "plugin::users-permissions.user",
-      "inversedBy": "chat_sessions"
+    "email": {
+      "type": "email"
     }
   }
 }

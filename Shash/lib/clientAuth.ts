@@ -1,17 +1,11 @@
-import { chatStorage } from './indexedDB';
+// import { signOut } from '../auth';
+// import { clearAuthToken } from './cookies';
 
-export async function handleSignOut() {
-  try {
-    await chatStorage.clearAll();
-  } catch (error) {
-    console.error('Error clearing IndexedDB:', error);
-  }
-}
-
-export async function syncChats(userId: string, jwt: string) {
-  try {
-    await chatStorage.syncWithServer(userId, jwt);
-  } catch (error) {
-    console.error('Error syncing chats:', error);
-  }
-} 
+// export async function handleSignOut() {
+//   try {
+//     await signOut();
+//     clearAuthToken();
+//   } catch (error) {
+//     console.error('Error clearing IndexedDB:', error);
+//   }
+// }

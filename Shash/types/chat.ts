@@ -1,10 +1,12 @@
 export interface ChatSession {
   id: number;
+  documentId: string;
   title: string;
   description?: string;
   createdAt: string;
   updatedAt: string;
-  messages?: ChatMessage[];
+  published_at: string;
+  email: string;
 }
 
 // export interface Message {
@@ -15,9 +17,12 @@ export interface ChatSession {
 // }
 
 export interface ChatMessage {
-  id: number;
+  id: string;
   content: string;
   sender: 'user' | 'server';
-  timestamp: Date;
-  chatId: number;
-} 
+  documentId : string;
+  timestamp?: string;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
+}

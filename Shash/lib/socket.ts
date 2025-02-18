@@ -1,12 +1,17 @@
 import { io, Socket } from "socket.io-client";
-import { ChatMessage } from "@/types/chat";
 
-// Use NEXT_PUBLIC_SOCKET_URL for WebSocket connections
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || "http://strapi-chat-app-production.up.railway.app";
+type Message = {
+  content: string;
+  sender: 'user' | 'server';
+  timestamp: string;
+};
+
+// Use NEXT_PUBLIC_API_URL as your SOCKET_URL
+const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337";
 
 let socket: Socket | null = null;
 
-export const getSocket = (chatId?: number) => {
+export const getSocket = (chatId: string) => {
   if (!socket) {
     socket = io(SOCKET_URL, {
       autoConnect: false,
@@ -20,12 +25,15 @@ export const getSocket = (chatId?: number) => {
   return socket;
 };
 
-export const connectSocket = (chatId?: number) => {
+export const connectSocket = (chatId: string) => {
   const socket = getSocket(chatId);
-  return socket.connect();
+  socket.connect();
+  // Join the room for this chat using its documentId
+  socket.emit("join_room", { chatId });
+  return socket;
 };
 
-export const sendMessage = (content: string, chatId: number) => {
+export const sendMessage = (content: string, chatId: string) => {
   const socket = getSocket(chatId);
   if (socket) {
     const payload = {
@@ -35,16 +43,6 @@ export const sendMessage = (content: string, chatId: number) => {
     };
     // Emit event with a dynamic name: "chat_message_<chatId>"
     socket.emit(`chat_message_${chatId}`, payload);
-  }
-};
-
-export const listenForMessages = (chatId: number, callback: (message: ChatMessage) => void) => {
-  const socket = getSocket(chatId);
-  if (socket) {
-    // Listen for messages on the event named "chat_message_<chatId>"
-    socket.on(`chat_message_${chatId}`, (message: ChatMessage) => {
-      callback(message);
-    });
   }
 };
 

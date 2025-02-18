@@ -64,12 +64,6 @@
       "target": "plugin::users-permissions.role",
       "inversedBy": "users",
       "configurable": false
-    },
-    "chat_sessions": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::chat-session.chat-session",
-      "mappedBy": "users_permissions_user"
     }
   }
 }

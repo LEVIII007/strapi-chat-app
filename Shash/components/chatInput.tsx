@@ -4,11 +4,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
 import { connectSocket, sendMessage } from "@/lib/socket";
-import { ChatMessage, ChatSession } from "@/types/chat";
+import { ChatSession } from "@/types/chat";
+
+type Message = {
+  content: string;
+  sender: 'user' | 'server';
+  timestamp: string;
+};
 
 interface ChatInputProps {
   selectedChat: ChatSession | null;
-  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
 }
 
 export default function ChatInput({ selectedChat, setMessages }: ChatInputProps) {
@@ -16,22 +22,21 @@ export default function ChatInput({ selectedChat, setMessages }: ChatInputProps)
   
   const socket = useMemo(() => {
     if (selectedChat) {
-      return connectSocket(selectedChat.id);
+      return connectSocket(selectedChat.documentId);
     }
   }, [selectedChat]);
 
   useEffect(() => {
     if (!socket || !selectedChat) return;
-    socket.off("chat_message"); // Cleanup previous listeners
-    socket.on("chat_message", (message: ChatMessage) => {
+    const eventName = `chat_message_${selectedChat.documentId}`;
+    socket.off(eventName); // Clean up any previous listeners for this event.
+    socket.on(eventName, (message: Message) => {
       console.log("📩 Received Message:", message);
-      if (message.chatId === selectedChat.id) {
-        setMessages(prev => [...prev, message]);
-      }
+      setMessages(prev => [...prev, message]);
     });
 
     return () => {
-      socket.off("chat_message");
+      socket.off(eventName);
       socket.disconnect();
     };
   }, [socket, selectedChat, setMessages]);
@@ -40,16 +45,14 @@ export default function ChatInput({ selectedChat, setMessages }: ChatInputProps)
     e.preventDefault();
     if (!input.trim() || !selectedChat || !socket) return;
 
-    const userMessage: ChatMessage = {
-      id: Date.now(),
+    const userMessage: Message = {
       content: input,
       sender: "user",
-      timestamp: new Date(),
-      chatId: selectedChat.id,
+      timestamp: new Date().toISOString(),
     };
 
     setMessages(prev => [...prev, userMessage]);
-    sendMessage(input, selectedChat.id);
+    sendMessage(input, selectedChat.documentId);
     setInput("");
   };
 

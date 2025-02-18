@@ -4,56 +4,118 @@ import { cn } from "@/lib/utils";
 import { PanelLeftClose, Plus, Pencil, Trash } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { handleSignOut } from "@/lib/clientAuth";
+import { useState, useEffect } from "react";
 import CreateChatDialog from "./CreateChatDialog";
-import { ChatSession } from "@/types/chat";
+import { ChatSession as ChatSessionType } from "@/types/chat";
 import { Input } from "@/components/ui/input";
+import { useRouter, usePathname } from "next/navigation";
+import {
+  deleteChatSession,
+  RenameChat,
+  createChatSession,
+} from "@/lib/queries";
 
 interface SidebarProps {
-  conversations: ChatSession[];
-  selectedChat: ChatSession | null;
+  initialConversations: ChatSessionType[];
   isSidebarOpen: boolean;
-  setIsSidebarOpen: (value: boolean) => void;
-  handleChatChange: (chat: ChatSession) => void;
-  onDeleteChat: (chatId: number) => void;
-  onCreateChat: (title: string) => void;
-  onRenameChat: (chatId: number, newTitle: string) => void;
 }
 
-export default function Sidebar({
-  conversations,
-  selectedChat,
-  isSidebarOpen,
-  setIsSidebarOpen,
-  handleChatChange,
-  onDeleteChat,
-  onCreateChat,
-  onRenameChat,
-}: SidebarProps) {
+export default function Sidebar({ initialConversations, isSidebarOpen }: SidebarProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const { data: session } = useSession();
+  const [conversations, setConversations] = useState<ChatSessionType[]>(initialConversations || []);
+  const [sidebarOpen, setSidebarOpen] = useState(isSidebarOpen);
   const [isCreatingChat, setIsCreatingChat] = useState(false);
-  const [editingChatId, setEditingChatId] = useState<number | null>(null);
+  // Use documentId (string) for editing state
+  const [editingChatDocumentId, setEditingChatDocumentId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
 
-  const handleUserSignOut = async () => {
-    await handleSignOut();
-    signOut();
+  console.log("Conversations", conversations);
+  console.log("initialConversations", initialConversations);
+
+  // The URL segment uses documentId (a string)
+  const selectedChatDocumentId = pathname.startsWith('/chat/') ? pathname.split('/')[2] : null;
+
+  const handleChatChange = (chat: ChatSessionType) => {
+    router.push(`/chat/${chat.documentId}`);
   };
 
-  const handleStartRename = (chatId: number, currentTitle: string) => {
-    setEditingChatId(chatId);
+  useEffect(() => {
+    setConversations(initialConversations || []);
+  }, [initialConversations]);
+
+  const onDeleteChat = async (documentId: string) => {
+    try {
+      // If the backend still requires a numeric id, convert documentId to a number.
+      const res = await deleteChatSession(parseInt(documentId));
+      if (res.success) {
+        setConversations((prev) => prev.filter((c) => c.documentId !== documentId));
+        if (selectedChatDocumentId === documentId) {
+          router.push("/");
+        }
+      } else {
+        console.error("Failed to delete chat session:", res.message);
+      }
+    } catch (error) {
+      console.error("Error deleting chat session:", error);
+    }
+  };
+
+  const onRenameChat = async (documentId: string, newTitle: string) => {
+    try {
+      // Convert documentId to number if needed by the API.
+      const res = await RenameChat(documentId, newTitle);
+      if (res.success) {
+        setConversations((prev) =>
+          prev.map((c) => (c.documentId === documentId ? { ...c, title: newTitle } : c))
+        );
+        setEditingChatDocumentId(null);
+        setEditingTitle("");
+      } else {
+        console.error("Failed to rename chat:", res.message);
+      }
+    } catch (error) {
+      console.error("Error renaming chat:", error);
+    }
+  };
+
+  const handleStartRename = (documentId: string, currentTitle: string) => {
+    setEditingChatDocumentId(documentId);
     setEditingTitle(currentTitle);
   };
 
-  const handleFinishRename = (chatId: number) => {
-    if (editingTitle.trim() && editingTitle !== conversations.find(c => c.id === chatId)?.title) {
-      onRenameChat(chatId, editingTitle.trim());
+  const handleFinishRename = async (documentId: string) => {
+    if (editingTitle.trim()) {
+      await onRenameChat(documentId, editingTitle.trim());
     }
-    setEditingChatId(null);
-    setEditingTitle("");
+  };
+
+  const handleUserSignOut = async () => {
+    await signOut();
+    router.push("/");
+  };
+
+  const onCreateChat = async (title: string, description: string) => {
+    try {
+      const res = await createChatSession({ title, description });
+      if (res.success && res.data) {
+        setConversations((prev) => [...prev, res.data]);
+        router.push(`/chat/${res.data.documentId}`);
+      } else {
+        console.error("Failed to create chat session:", res.message);
+      }
+    } catch (error) {
+      console.error("Error creating chat session:", error);
+    }
+    setIsCreatingChat(false);
   };
 
   return (
@@ -61,26 +123,31 @@ export default function Sidebar({
       className={cn(
         "fixed inset-y-0 left-0 bg-sidebar border-r border-sidebar-border p-4 flex flex-col transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0",
         {
-          "translate-x-0": isSidebarOpen,
-          "-translate-x-full": !isSidebarOpen,
+          "translate-x-0": sidebarOpen,
+          "-translate-x-full": !sidebarOpen,
         },
         {
-          "md:w-1/6 md:z-0 z-20 w-1/2": isSidebarOpen,
-          hidden: !isSidebarOpen,
+          "md:w-1/6 md:z-0 z-20 w-1/2": sidebarOpen,
+          hidden: !sidebarOpen,
         }
       )}
     >
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold">Chats</h2>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsCreatingChat(true)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={() => setIsCreatingChat(true)}
+          >
             <Plus className="h-4 w-4" />
           </Button>
           <PanelLeftClose
             className={cn("cursor-pointer w-6 h-6", {
-              hidden: !isSidebarOpen,
+              hidden: !sidebarOpen,
             })}
-            onClick={() => setIsSidebarOpen(false)}
+            onClick={() => setSidebarOpen(false)}
           />
         </div>
       </div>
@@ -94,22 +161,31 @@ export default function Sidebar({
       <div className="flex-1 space-y-2">
         {conversations.map((chat) => (
           <div
-            key={chat.id}
-            className={cn("group flex items-center justify-between p-3 cursor-pointer rounded-lg", {
-              "bg-secondary": selectedChat?.id === chat.id,
-              "hover:bg-muted": selectedChat?.id !== chat.id,
-            })}
+            key={chat.documentId}
+            className={cn(
+              "group flex items-center justify-between p-3 cursor-pointer rounded-lg",
+              {
+                "bg-secondary": selectedChatDocumentId === chat.documentId,
+                "hover:bg-muted": selectedChatDocumentId !== chat.documentId,
+              }
+            )}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!editingChatDocumentId) {
+                handleChatChange(chat);
+              }
+            }}
           >
-            {editingChatId === chat.id ? (
+            {editingChatDocumentId === chat.documentId ? (
               <div className="flex items-center gap-2 w-full">
                 <Input
                   value={editingTitle}
                   onChange={(e) => setEditingTitle(e.target.value)}
                   className="h-6"
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleFinishRename(chat.id);
-                    if (e.key === 'Escape') {
-                      setEditingChatId(null);
+                    if (e.key === "Enter") handleFinishRename(chat.documentId);
+                    if (e.key === "Escape") {
+                      setEditingChatDocumentId(null);
                       setEditingTitle("");
                     }
                   }}
@@ -118,7 +194,7 @@ export default function Sidebar({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleFinishRename(chat.id)}
+                  onClick={() => handleFinishRename(chat.documentId)}
                 >
                   Save
                 </Button>
@@ -133,7 +209,7 @@ export default function Sidebar({
                     className="h-6 w-6"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleStartRename(chat.id, chat.title);
+                      handleStartRename(chat.documentId, chat.title);
                     }}
                   >
                     <Pencil className="h-3 w-3" />
@@ -144,7 +220,7 @@ export default function Sidebar({
                     className="h-6 w-6 hover:text-destructive"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onDeleteChat(chat.id);
+                      onDeleteChat(chat.documentId);
                     }}
                   >
                     <Trash className="h-3 w-3" />
@@ -168,7 +244,9 @@ export default function Sidebar({
             </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuItem onClick={handleUserSignOut}>Sign out</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleUserSignOut}>
+              Sign out
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

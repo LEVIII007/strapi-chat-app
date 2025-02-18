@@ -2,7 +2,7 @@
 
 import { Server } from 'socket.io';
 
-export function setupWebSocket(strapi: any) {
+export function setupWebSocket(strapi) {
   process.nextTick(() => {
     console.log('🚀 Setting up WebSocket server');
     const httpServer = strapi.server.httpServer || strapi.server;
@@ -35,15 +35,14 @@ export function setupWebSocket(strapi: any) {
         console.log(`🔗 Socket ${socket.id} joined room ${roomName}`);
       });
 
-      // Listen for dynamic chat message events (e.g., "chat_message_1")
+      // Listen for dynamic chat message events (e.g., "chat_message_<documentId>")
       socket.onAny(async (event, data) => {
         if (event.startsWith("chat_message_")) {
           try {
             console.log('📨 Received event:', event, 'Data:', data);
 
-            // Extract chatId from event name (e.g., "chat_message_1")
-            const chatIdStr = event.replace("chat_message_", "");
-            const chatId = parseInt(chatIdStr, 10);
+            // Extract chatId (documentId) from the event name
+            const chatId = event.replace("chat_message_", "");
 
             if (!chatId || !data.content) {
               socket.emit('error', { message: 'chatId and content are required' });
@@ -76,8 +75,8 @@ export function setupWebSocket(strapi: any) {
               id: serverMessage.id,
               content: serverMessage.content,
               sender: serverMessage.sender,
-              timestamp: new Date(),
-              chatId: chatId,
+              // Optionally, include a timestamp:
+              timestamp: serverMessage.created_at,
             });
 
             console.log(`📤 Emitted ${dynamicEvent} to room chat_${chatId}`);

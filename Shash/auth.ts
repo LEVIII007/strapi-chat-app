@@ -2,7 +2,7 @@ import NextAuth, {DefaultSession} from "next-auth";
 import Google from "next-auth/providers/google";
 import { setAuthToken, clearAuthToken } from "@/lib/cookies";
 
-
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337";
 
 declare module "next-auth" {
   interface Session extends DefaultSession {
@@ -33,7 +33,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (account && user) {
         try {
           const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/auth/${account.provider}/callback?access_token=${account.access_token}`
+            `${API_URL}/api/auth/${account.provider}/callback?access_token=${account.access_token}`
           );
           const data = await response.json();
           
@@ -42,13 +42,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             token.id = data.user.id;
             setAuthToken(data.jwt);
 
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`, {
+            await fetch(`${API_URL}/api/users`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${data.jwt}`,
               },
               body: JSON.stringify({
+                id: user.id,  
                 email: user.email,
                 name: user.name,
                 image: user.image,
@@ -74,5 +75,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return session;
     }
+  },
+  events: {
+    async signOut() {
+      // When a user signs out, clear the auth token cookie
+      await clearAuthToken();
+    },
   },
 });
