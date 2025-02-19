@@ -1,5 +1,5 @@
 "use client";
-// import { useState } from "react";
+
 import ChatInput from "@/components/chatInput";
 import { ChatSession, ChatMessage } from "@/types/chat";
 
@@ -56,9 +56,9 @@ export default function ChatInterface({ initialMessages, chatSession }: { initia
                 </p>
                 <div className="grid gap-3 text-left">
                   {[
-                    "How do I get started with IntentJS?",
-                    "What are providers in IntentJS?",
-                    "How can I handle authentication?"
+                    "How do I get started with Ayna AI?",
+                    "What are the features of Ayna AI?",
+                    "How are you doing?"
                   ].map((question, i) => (
                     <button
                       key={i}
